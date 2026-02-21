@@ -19,31 +19,31 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
         <div className="p-8 sm:p-10 text-center">
           <div className="flex justify-center mb-6">
-            <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <BookOpen className="h-8 w-8 text-blue-600" />
+            <div className="h-16 w-16 bg-blue-900/30 rounded-full flex items-center justify-center ring-1 ring-blue-500/50">
+              <BookOpen className="h-8 w-8 text-blue-400" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+          <h1 className="text-3xl font-bold text-slate-100 mb-2">
             Reto de Conectores Lógicos
           </h1>
-          <p className="text-slate-500 mb-8">
+          <p className="text-slate-400 mb-8">
             Demuestra tu dominio sobre los conectores textuales y mejora tu redacción.
           </p>
 
           <form onSubmit={handleStart} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 text-left">
+              <label className="block text-sm font-medium text-slate-300 mb-2 text-left">
                 Tu Nombre y Apellido
               </label>
               <input
                 type="text"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                 placeholder="Ej. Juan Pérez"
                 required
               />
@@ -58,9 +58,9 @@ export default function Home() {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 text-sm text-slate-500">
+          <div className="mt-8 pt-6 border-t border-slate-700 text-sm text-slate-400">
             ¿Eres profesor? {" "}
-            <a href="/admin/login" className="text-blue-600 hover:underline">
+            <a href="/admin/login" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
               Acceso Administrativo
             </a>
           </div>

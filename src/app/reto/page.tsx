@@ -74,34 +74,34 @@ export default function Reto() {
     const partesEnunciado = currentEjercicio.enunciado_incorrecto.split("__________");
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
             {/* Top Bar / Hub */}
             <div className="max-w-3xl w-full flex justify-between items-center mb-8">
-                <div className="bg-white rounded-full px-5 py-2 shadow-sm border border-slate-200 text-slate-600 font-medium text-sm">
-                    Pregunta <span className="text-blue-600 ml-1">{ejercicioActualIndex + 1}</span> de {ejercicios.length}
+                <div className="bg-slate-800 rounded-full px-5 py-2 shadow-sm border border-slate-700 text-slate-300 font-medium text-sm">
+                    Pregunta <span className="text-blue-400 ml-1">{ejercicioActualIndex + 1}</span> de {ejercicios.length}
                 </div>
 
-                <div className={`bg-white rounded-full px-5 py-2 shadow-sm border font-medium text-sm flex items-center transition-colors ${tiempoRestante < 60 ? 'border-red-300 text-red-600 bg-red-50' : 'border-slate-200 text-slate-700'
+                <div className={`bg-slate-800 rounded-full px-5 py-2 shadow-sm border font-medium text-sm flex items-center transition-colors ${tiempoRestante < 60 ? 'border-red-900 text-red-400 bg-red-900/20' : 'border-slate-700 text-slate-300'
                     }`}>
                     <Clock className="w-4 h-4 mr-2" />
                     {formatTime(tiempoRestante)}
                 </div>
             </div>
 
-            <div className="max-w-3xl w-full bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
+            <div className="max-w-3xl w-full bg-slate-800 rounded-3xl shadow-2xl overflow-hidden mb-8 border border-slate-700">
                 {/* Progress Bar */}
-                <div className="h-1.5 w-full bg-slate-100">
+                <div className="h-1.5 w-full bg-slate-700">
                     <div
-                        className="h-full bg-blue-500 transition-all duration-300 ease-out"
+                        className="h-full bg-blue-500 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]"
                         style={{ width: `${((ejercicioActualIndex) / ejercicios.length) * 100}%` }}
                     />
                 </div>
 
                 <div className="p-8 sm:p-12">
                     {/* El Enunciado */}
-                    <div className="text-xl sm:text-2xl text-slate-800 leading-relaxed font-serif text-center mb-12">
+                    <div className="text-xl sm:text-2xl text-slate-100 leading-relaxed font-serif text-center mb-12">
                         {partesEnunciado[0]}
-                        <span className="inline-block border-b-2 border-dashed border-blue-400 w-24 mx-2"></span>
+                        <span className="inline-block border-b-2 border-dashed border-blue-400/50 w-24 mx-2"></span>
                         {partesEnunciado[1]}
                     </div>
 
@@ -111,9 +111,9 @@ export default function Reto() {
                             <button
                                 key={i}
                                 onClick={() => handleResponder(opcion)}
-                                className="py-4 px-6 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 text-slate-700 font-medium transition-all text-lg group text-center"
+                                className="py-4 px-6 rounded-xl border-2 border-slate-700 hover:border-blue-500/50 hover:bg-slate-700/50 text-slate-300 font-medium transition-all text-lg group text-center"
                             >
-                                <span className="group-hover:text-blue-700">{opcion}</span>
+                                <span className="group-hover:text-blue-300">{opcion}</span>
                             </button>
                         ))}
                     </div>

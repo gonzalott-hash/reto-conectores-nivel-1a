@@ -4,10 +4,12 @@ import { getDb } from '@/lib/db';
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const limite = searchParams.get('limit') || '10';
-        const limitNum = parseInt(limite, 10);
-
         const db = await getDb();
+
+        // Obtener limite dinámico
+        const paramRow = await db.get("SELECT valor FROM configuracion WHERE clave = 'num_ejercicios'");
+        const dbLimit = paramRow ? parseInt(paramRow.valor, 10) : null;
+        const limitNum = dbLimit || parseInt(searchParams.get('limit') || '10', 10);
 
         // Sólo trae ejercicios activos y ordenados al azar
         const ejercicios = await db.all(`
@@ -18,10 +20,18 @@ export async function GET(request: Request) {
       LIMIT ?
     `, [limitNum]);
 
-        const parsedEjercicios = ejercicios.map(e => ({
-            ...e,
-            opciones: JSON.parse(e.opciones)
-        }));
+        const parsedEjercicios = ejercicios.map(e => {
+            let opcionesArr: string[] = JSON.parse(e.opciones);
+            // Shuffle opciones
+            for (let i = opcionesArr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [opcionesArr[i], opcionesArr[j]] = [opcionesArr[j], opcionesArr[i]];
+            }
+            return {
+                ...e,
+                opciones: opcionesArr
+            };
+        });
 
         return NextResponse.json(parsedEjercicios);
     } catch (error) {
