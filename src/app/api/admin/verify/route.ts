@@ -7,8 +7,11 @@ export async function POST(request: Request) {
         const adminPassword = process.env.ADMIN_PASSWORD;
 
         if (!adminPassword) {
-            console.warn("ADMIN_PASSWORD is not set in environment variables!");
-            return NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 });
+            console.error("[Auth Error] ADMIN_PASSWORD environment variable is missing!");
+            return NextResponse.json({
+                success: false,
+                message: 'Server configuration error: Admin credentials not configured.'
+            }, { status: 500 });
         }
 
         if (password === adminPassword) {
