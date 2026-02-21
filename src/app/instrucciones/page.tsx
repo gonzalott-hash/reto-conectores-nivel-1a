@@ -12,8 +12,8 @@ export default function Instrucciones() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const NUMERO_EJERCICIOS = 10;
-    const TIEMPO_MINUTOS = 10;
+    const [numEjercicios, setNumEjercicios] = useState(10);
+    const TIEMPO_MINUTOS = numEjercicios;
 
     useEffect(() => {
         if (!nombreAlumno) {
@@ -23,7 +23,22 @@ export default function Instrucciones() {
 
         const loadEjercicios = async () => {
             try {
-                const res = await fetch(`/api/ejercicios/random?limit=${NUMERO_EJERCICIOS}`);
+                let limit = 10;
+                try {
+                    const confRes = await fetch("/api/config");
+                    if (confRes.ok) {
+                        const confData = await confRes.json();
+                        if (confData.num_ejercicios) {
+                            limit = parseInt(confData.num_ejercicios, 10);
+                        }
+                    }
+                } catch (confErr) {
+                    console.error("Error cargando configuracion", confErr);
+                }
+
+                setNumEjercicios(limit);
+
+                const res = await fetch(`/api/ejercicios/random?limit=${limit}`);
                 if (!res.ok) throw new Error("Error cargando ejercicios");
 
                 const data = await res.json();
@@ -33,7 +48,7 @@ export default function Instrucciones() {
                 } else {
                     setEjercicios(data);
                 }
-            } catch (err) {
+            } catch {
                 setError("Error de red al cargar el reto.");
             } finally {
                 setLoading(false);

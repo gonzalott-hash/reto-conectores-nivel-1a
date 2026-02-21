@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Lock } from "lucide-react";
 
 export default function AdminLogin() {
@@ -31,7 +32,7 @@ export default function AdminLogin() {
                 const data = await res.json();
                 setError(data.message || "Contraseña incorrecta");
             }
-        } catch (err) {
+        } catch {
             setError("Error de conexión");
         } finally {
             setLoading(false);
@@ -83,9 +84,9 @@ export default function AdminLogin() {
                             {loading ? "Verificando..." : "Ingresar al Panel"}
                         </button>
                         <div className="text-center mt-4">
-                            <a href="/" className="text-sm text-slate-400 hover:text-slate-300 transition-colors">
+                            <Link href="/" className="text-sm text-slate-400 hover:text-slate-300 transition-colors">
                                 Volver al inicio
-                            </a>
+                            </Link>
                         </div>
                     </form>
                 </div>

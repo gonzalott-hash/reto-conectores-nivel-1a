@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
-export async function PUT(request: Request, context: any) {
+export async function PUT(request: Request, context: { params: { id: string } }) {
     try {
         const { id } = context.params;
         const body = await request.json();
@@ -35,7 +35,7 @@ export async function PUT(request: Request, context: any) {
     }
 }
 
-export async function DELETE(request: Request, context: any) {
+export async function DELETE(request: Request, context: { params: { id: string } }) {
     // We'll use a soft delete/toggle logic rather than actual DELETE to keep data integrity if needed in the future
     // Or hard delete if explicitly preferred. We'll do hard delete here as requested for a simple admin panel.
     try {

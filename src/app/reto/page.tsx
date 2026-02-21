@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/game-session";
 import { Clock } from "lucide-react";
@@ -17,7 +17,7 @@ export default function Reto() {
         finalizarReto
     } = useGameStore();
 
-    const [tiempoInicio, setTiempoInicio] = useState(Date.now());
+    const tiempoInicio = useRef<number>(0);
 
     useEffect(() => {
         if (ejercicios.length === 0) {
@@ -25,7 +25,7 @@ export default function Reto() {
             return;
         }
 
-        setTiempoInicio(Date.now()); // Resetear tiempo cada vez que entra a un nuevo ejercicio
+        tiempoInicio.current = new Date().getTime(); // Resetear tiempo cada vez que entra a un nuevo ejercicio
     }, [ejercicioActualIndex, ejercicios, router]);
 
     useEffect(() => {
@@ -51,7 +51,7 @@ export default function Reto() {
     }, [ejercicioActualIndex, ejercicios, router]);
 
     const handleResponder = (respuesta: string) => {
-        const tiempoTomado = Math.round((Date.now() - tiempoInicio) / 1000);
+        const tiempoTomado = Math.round((new Date().getTime() - tiempoInicio.current) / 1000);
 
         responderEjercicio({
             ejercicioId: currentEjercicio.id,

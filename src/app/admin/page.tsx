@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Edit2, Trash2, LogOut, CheckCircle2, XCircle, Upload, Info, Download, LayoutDashboard, BookOpen, List, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Edit2, Trash2, LogOut, CheckCircle2, XCircle, Upload, Info, Download, LayoutDashboard, ChevronDown, ChevronRight } from "lucide-react";
 
 type Ejercicio = {
     id: number;
@@ -247,7 +247,7 @@ export default function AdminPage() {
         }
     };
 
-    const totalEjercicios = ejercicios.length;
+
     const activosEjercicios = ejercicios.filter(e => e.es_activo).length;
 
     return (
@@ -399,7 +399,7 @@ export default function AdminPage() {
 
                             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Enunciado (Usa "__________" para el espacio)</label>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Enunciado (Usa &quot;__________&quot; para el espacio)</label>
                                     <textarea
                                         required
                                         rows={3}

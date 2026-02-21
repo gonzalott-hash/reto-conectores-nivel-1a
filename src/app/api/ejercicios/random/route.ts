@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     `, [limitNum]);
 
         const parsedEjercicios = ejercicios.map(e => {
-            let opcionesArr: string[] = JSON.parse(e.opciones);
+            const opcionesArr: string[] = JSON.parse(e.opciones);
             // Shuffle opciones
             for (let i = opcionesArr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));

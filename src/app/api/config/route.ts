@@ -6,7 +6,7 @@ export async function GET() {
         const db = await getDb();
         const configParams = await db.all("SELECT * FROM configuracion");
 
-        let confObj: Record<string, string> = {};
+        const confObj: Record<string, string> = {};
         for (const item of configParams) {
             confObj[item.clave] = item.valor;
         }
