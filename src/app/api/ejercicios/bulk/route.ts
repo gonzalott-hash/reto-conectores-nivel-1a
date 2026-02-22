@@ -16,11 +16,9 @@ export async function POST(req: NextRequest) {
             VALUES (?, ?, ?, ?)
         `);
 
-        // Ejecutar inserciones, la librería `sqlite` (basada en promesas) no soporta transacciones síncronas simples
-        // de la misma manera que `better-sqlite3`. Haremos prepared statements iterativos.
+        // Ejecutar inserciones directamente. Las transacciones explicitas a veces bloquean los drivers de Serverless (Vercel)
         let insertados = 0;
 
-        await db.run('BEGIN TRANSACTION');
         try {
             for (const ej of body.ejercicios) {
                 if (ej.enunciado_incorrecto && ej.opciones && ej.conector_correcto) {
@@ -33,9 +31,8 @@ export async function POST(req: NextRequest) {
                     insertados++;
                 }
             }
-            await db.run('COMMIT');
         } catch (txnErr) {
-            await db.run('ROLLBACK');
+            console.error("Error intertando lote de ejercicios:", txnErr);
             throw txnErr; // Rethrow to be caught by the outer catch
         } finally {
             await stmt.finalize();
