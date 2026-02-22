@@ -266,12 +266,12 @@ export default function AdminPage() {
                 fetchEjercicios();
             } else {
                 const errData = await res.json();
-                alert(`Error: ${errData.message || 'Error al importar'}`);
+                alert(`Error: ${errData.message || 'Error al importar'}\nDetalle: ${errData.details || ''}`);
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Hubo un error al procesar el texto. Revisa la consola para más detalles.");
+            alert(`Hubo un error al procesar el texto: ${error.message}`);
         } finally {
             setIsImporting(false);
         }

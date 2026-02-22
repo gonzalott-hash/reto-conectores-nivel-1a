@@ -43,8 +43,11 @@ export async function POST(req: NextRequest) {
             insertados
         }, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error en bulk import:", error);
-        return NextResponse.json({ message: "Error interno del servidor al importar" }, { status: 500 });
+        return NextResponse.json({
+            message: "Error interno del servidor al importar",
+            details: error?.message || String(error)
+        }, { status: 500 });
     }
 }
