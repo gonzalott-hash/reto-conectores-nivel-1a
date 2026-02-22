@@ -305,18 +305,18 @@ export default function AdminPage() {
                     </div>
                     <div className="flex space-x-3 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 shrink-0">
                         <button
-                            onClick={() => setIsBulkModalOpen(true)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm ring-1 ring-emerald-500/50"
-                        >
-                            <Upload className="w-4 h-4 mr-2" />
-                            Importación Masiva
-                        </button>
-                        <button
                             onClick={() => openModal()}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm ring-1 ring-blue-500/50"
                         >
                             <Plus className="w-4 h-4 mr-2" />
-                            Nuevo
+                            Agregar nuevo ejercicio
+                        </button>
+                        <button
+                            onClick={() => setIsBulkModalOpen(true)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm ring-1 ring-emerald-500/50"
+                        >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Importación masiva de nuevos ejercicios
                         </button>
                     </div>
                 </div>
@@ -488,7 +488,7 @@ export default function AdminPage() {
                             <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                                 <div>
                                     <h3 className="text-xl font-bold text-slate-100">
-                                        Importación Masiva (Formato Word)
+                                        Importación Masiva (desde un archivo de texto)
                                     </h3>
                                     <p className="text-sm text-slate-400 mt-1">
                                         Copia y pega los ejercicios desde Word usando el formato requerido.
@@ -507,7 +507,7 @@ export default function AdminPage() {
                                         className="text-sm bg-slate-700/50 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-md flex items-center transition-colors border border-slate-600 shadow-sm"
                                     >
                                         <Download className="w-4 h-4 mr-2 text-emerald-400" />
-                                        Descargar Plantilla (.txt)
+                                        Descargar plantilla moldelo (.txt)
                                     </a>
 
                                     <button
@@ -515,7 +515,7 @@ export default function AdminPage() {
                                         className="text-sm text-blue-400 hover:text-blue-300 flex items-center transition-colors"
                                     >
                                         <Info className="w-4 h-4 mr-1" />
-                                        {showInstructions ? "Ocultar Instrucciones" : "Ver Instrucciones de Formato"}
+                                        {showInstructions ? "Ocultar Instrucciones" : "Leer instrucciones"}
                                     </button>
                                 </div>
 
