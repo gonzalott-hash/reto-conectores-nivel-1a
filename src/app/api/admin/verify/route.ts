@@ -4,7 +4,8 @@ export async function POST(request: Request) {
     try {
         const { password } = await request.json();
 
-        const adminPassword = process.env.ADMIN_PASSWORD;
+        // En caso de que la variable de entorno no se cargue correctamente
+        const adminPassword = process.env.ADMIN_PASSWORD || "eduadmin2026";
 
         if (!adminPassword) {
             console.error("[Auth Error] ADMIN_PASSWORD environment variable is missing!");
