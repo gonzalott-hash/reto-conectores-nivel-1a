@@ -28,12 +28,11 @@ export default function AdminPage() {
     const [isImporting, setIsImporting] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [formData, setFormData] = useState({
-        enunciado_incorrecto: "",
-        opciones: "",
-        conector_correcto: "",
-        explicacion: "",
+        texto_ejercicio: "",
         es_activo: true,
     });
+    // Add file upload state
+    const [file, setFile] = useState<File | null>(null);
 
     // Verify Auth
     useEffect(() => {
@@ -94,20 +93,15 @@ export default function AdminPage() {
     const openModal = (ejercicio?: Ejercicio) => {
         if (ejercicio) {
             setEditingId(ejercicio.id);
+            const texto = ejercicio.enunciado_incorrecto + "\n" + ejercicio.opciones.map(opt => opt === ejercicio.conector_correcto ? opt + "*" : opt).join("\n");
             setFormData({
-                enunciado_incorrecto: ejercicio.enunciado_incorrecto,
-                opciones: ejercicio.opciones.join(", "),
-                conector_correcto: ejercicio.conector_correcto,
-                explicacion: ejercicio.explicacion,
+                texto_ejercicio: texto,
                 es_activo: Boolean(ejercicio.es_activo),
             });
         } else {
             setEditingId(null);
             setFormData({
-                enunciado_incorrecto: "",
-                opciones: "",
-                conector_correcto: "",
-                explicacion: "",
+                texto_ejercicio: "",
                 es_activo: true,
             });
         }
@@ -122,12 +116,35 @@ export default function AdminPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Parse comma separated options
-        const parsedOptions = formData.opciones.split(",").map(opt => opt.trim()).filter(Boolean);
+        const lines = formData.texto_ejercicio.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) {
+            alert("El formato debe incluir al menos un enunciado y una opción.");
+            return;
+        }
+
+        const enunciado_incorrecto = lines[0];
+        let conector_correcto = "";
+
+        const opcionesArray = lines.slice(1).map(opt => {
+            if (opt.endsWith('*')) {
+                const cleanOpt = opt.slice(0, -1).trim();
+                conector_correcto = cleanOpt;
+                return cleanOpt;
+            }
+            return opt;
+        });
+
+        if (!conector_correcto) {
+            alert("Debes marcar la respuesta correcta con un asterisco (*).");
+            return;
+        }
 
         const payload = {
-            ...formData,
-            opciones: parsedOptions
+            enunciado_incorrecto,
+            opciones: opcionesArray,
+            conector_correcto,
+            explicacion: "",
+            es_activo: formData.es_activo
         };
 
         try {
@@ -173,15 +190,27 @@ export default function AdminPage() {
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">Cargando panel...</div>;
 
     const handleBulkImport = async () => {
-        if (!bulkText.trim()) {
-            alert("Por favor, ingresa el texto con los ejercicios.");
+        let textToProcess = bulkText;
+
+        if (file) {
+            textToProcess = await extractTextFromFile(file);
+        }
+
+        if (!textToProcess.trim()) {
+            alert("Por favor, selecciona un archivo o ingresa el texto con los ejercicios.");
             return;
         }
 
         setIsImporting(true);
         try {
-            // Parsing logic
-            const blocks = bulkText.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+            // Normalizar el texto. Mammoth aveces genera multiples \n seguidos o usa etiquetas para los párrafos de docx
+            const normalizedText = textToProcess.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+            // Dividimos por bloques separados por 2 o más saltos de línea seguidos
+            const blocks = normalizedText.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+
+            console.log("BLOQUES DETECTADOS:", blocks.length);
+            console.log("PRIMER BLOQUE:", blocks[0]);
+
             const parsedEjercicios = blocks.map(block => {
                 const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
 
@@ -232,6 +261,7 @@ export default function AdminPage() {
                 const data = await res.json();
                 alert(`¡Éxito! Se importaron ${data.insertados} ejercicios nuevos.`);
                 setBulkText("");
+                setFile(null);
                 setIsBulkModalOpen(false);
                 fetchEjercicios();
             } else {
@@ -247,6 +277,112 @@ export default function AdminPage() {
         }
     };
 
+    const extractTextFromFile = async (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = async (e) => {
+                const result = e.target?.result;
+
+                if (file.name.endsWith('.docx')) {
+                    if (result instanceof ArrayBuffer) {
+                        try {
+                            // @ts-ignore
+                            const mammoth = await import("mammoth/mammoth.browser");
+                            // Convertir a HTML primero para ver la separacion de parrafos
+                            const extract = await mammoth.convertToHtml({ arrayBuffer: result });
+                            // Mammoth uses <p> as paragraph separator
+                            console.log("MAMMOTH HTML:", extract.value);
+
+                            // Transformar los <p> a saltos de linea. 
+                            // Un <p></p> vacio = linea en blanco = separador de bloque
+                            let text = extract.value
+                                .replace(/<\/p><p>/g, '\n')
+                                .replace(/<p>/g, '')
+                                .replace(/<\/p>/g, '')
+                                .replace(/<br\s*\/?>/g, '\n');
+
+                            console.log("MAMMOTH TRANSFORMADO:", text);
+                            resolve(text);
+                        } catch (err) {
+                            console.error(err);
+                            reject(new Error("Error leyendo el archivo word."));
+                        }
+                    } else {
+                        reject(new Error("No se pudo leer el archivo docx como ArrayBuffer."));
+                    }
+                } else {
+                    if (typeof result === 'string') {
+                        resolve(result);
+                    } else {
+                        reject(new Error("No se pudo leer el archivo de texto."));
+                    }
+                }
+            };
+
+            reader.onerror = () => reject(new Error("Error de lectura del archivo"));
+
+            if (file.name.endsWith('.docx')) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.readAsText(file);
+            }
+        });
+    };
+
+    const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const droppedFile = e.dataTransfer.files[0];
+            if (droppedFile.name.endsWith(".txt") || droppedFile.name.endsWith(".docx")) {
+                setFile(droppedFile);
+            } else {
+                alert("Por favor sube un archivo .txt o .docx");
+            }
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleDownloadDb = () => {
+        if (!ejercicios || ejercicios.length === 0) {
+            alert("No hay ejercicios en la base de datos para descargar.");
+            return;
+        }
+
+        const lines = ejercicios.map(ej => {
+            const statement = ej.enunciado_incorrecto.trim();
+            const options = ej.opciones.map(opt => {
+                if (opt.trim() === ej.conector_correcto.trim()) {
+                    return opt.trim() + "*";
+                }
+                return opt.trim();
+            }).join("\n");
+            return `${statement}\n${options}`;
+        });
+
+        const textContent = lines.join("\n\n\n");
+        const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "banco_ejercicios.txt");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
 
     const activosEjercicios = ejercicios.filter(e => e.es_activo).length;
 
@@ -305,20 +441,23 @@ export default function AdminPage() {
                     </div>
                     <div className="flex space-x-3 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 shrink-0">
                         <button
-                            onClick={() => openModal()}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm ring-1 ring-blue-500/50"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Agregar nuevo ejercicio
-                        </button>
-                        <button
                             onClick={() => setIsBulkModalOpen(true)}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm ring-1 ring-emerald-500/50"
                         >
                             <Upload className="w-4 h-4 mr-2" />
-                            Importación masiva de nuevos ejercicios
+                            Incorporación de nuevos ejercicios
                         </button>
                     </div>
+                </div>
+
+                <div className="p-4 border-b border-slate-700/50 flex bg-slate-800">
+                    <button
+                        onClick={handleDownloadDb}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm ring-1 ring-blue-500/50 text-sm font-medium"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        Descargar Banco
+                    </button>
                 </div>
 
                 {showTable && (
@@ -399,50 +538,14 @@ export default function AdminPage() {
 
                             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Enunciado (Usa &quot;__________&quot; para el espacio)</label>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Ejercicio (Usa el formato de enunciado seguido de opciones, con un * en la correcta)</label>
                                     <textarea
                                         required
-                                        rows={3}
-                                        value={formData.enunciado_incorrecto}
-                                        onChange={(e) => setFormData({ ...formData, enunciado_incorrecto: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-md text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                        placeholder="Ej: Caminaba rápido, __________ llegó tarde."
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Opciones (separadas por coma)</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.opciones}
-                                        onChange={(e) => setFormData({ ...formData, opciones: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-md text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                        placeholder="pero, aunque, sin embargo, además"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Conector Correcto</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.conector_correcto}
-                                        onChange={(e) => setFormData({ ...formData, conector_correcto: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-md text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                        placeholder="sin embargo"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Explicación Pedagógica (solo visible en el PDF)</label>
-                                    <textarea
-                                        required
-                                        rows={2}
-                                        value={formData.explicacion}
-                                        onChange={(e) => setFormData({ ...formData, explicacion: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-md text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                        placeholder="Explica brevemente por qué es la respuesta correcta."
+                                        rows={8}
+                                        value={formData.texto_ejercicio}
+                                        onChange={(e) => setFormData({ ...formData, texto_ejercicio: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-md text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm leading-relaxed"
+                                        placeholder="«Gonzalo, cuando iba al trabajo, tenía la costumbre de caminar rápido; __________, esa mañana, por distraerse mirando a los pajaritos del parque, llegó tarde»&#10;pero&#10;aunque&#10;sin embargo*&#10;además"
                                     />
                                 </div>
 
@@ -488,10 +591,10 @@ export default function AdminPage() {
                             <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                                 <div>
                                     <h3 className="text-xl font-bold text-slate-100">
-                                        Importación Masiva (desde un archivo de texto)
+                                        Incorporación de nuevos ejercicios
                                     </h3>
                                     <p className="text-sm text-slate-400 mt-1">
-                                        Copia y pega los ejercicios desde Word usando el formato requerido.
+                                        Arrastra un archivo o copia y pega los ejercicios.
                                     </p>
                                 </div>
                                 <button onClick={() => setIsBulkModalOpen(false)} className="text-slate-400 hover:text-slate-200 transition-colors">
@@ -501,40 +604,53 @@ export default function AdminPage() {
 
                             <div className="p-6 flex-1 overflow-y-auto space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <a
-                                        href="/plantilla_ejercicios.txt"
-                                        download
-                                        className="text-sm bg-slate-700/50 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-md flex items-center transition-colors border border-slate-600 shadow-sm"
-                                    >
-                                        <Download className="w-4 h-4 mr-2 text-emerald-400" />
-                                        Descargar plantilla moldelo (.txt)
-                                    </a>
-
                                     <button
                                         onClick={() => setShowInstructions(!showInstructions)}
                                         className="text-sm text-blue-400 hover:text-blue-300 flex items-center transition-colors"
                                     >
                                         <Info className="w-4 h-4 mr-1" />
-                                        {showInstructions ? "Ocultar Instrucciones" : "Leer instrucciones"}
+                                        {showInstructions ? "Ocultar Instrucciones" : "Lea las instrucciones"}
                                     </button>
                                 </div>
 
                                 {showInstructions && (
-                                    <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 font-mono text-sm text-slate-300">
-                                        <p className="text-slate-400 mb-2 font-sans font-semibold">Formato requerido (separa ejercicios con una línea en blanco):</p>
-                                        <p>Caminaba rápido, __________ llegó tarde.</p>
-                                        <p>pero</p>
-                                        <p>aunque</p>
-                                        <p>sin embargo*</p>
-                                        <p>además</p>
-                                        <p className="mt-4 text-emerald-400/80 italic font-sans text-xs">Nota: Añade un asterisco (*) al final de la opción correcta.</p>
+                                    <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-sm text-slate-300 space-y-2 whitespace-pre-wrap">
+                                        <p>« Los nuevos ejercicios deben mantener el estándar del nivel 1:</p>
+                                        <p>- Enunciados entre 20 y 30 palabras con un solo conector reemplazado por una línea baja en blanco.</p>
+                                        <p>- Los nuevos ejercicios, entre 1 y 100, deben presentarse en un archivo de word o texto.</p>
+                                        <p>Si el profesor quiere subir 20 nuevos ejercicios, estos deben presentarse en un archivo word o texto respetando rigurosamente el formato de los siguientes ejemplos:</p>
+                                        <br />
+                                        <p>Lucho camina normalmente rápido, __________, hoy se distrajo mirando los pajaritos y llegó tarde.<br />pero<br />aunque<br />sin embargo*<br />además</p>
+                                        <br />
+                                        <p>No pasó mucho tiempo en Paris, __________ ya casi no tenía dinero<br />pues*<br />a pesar de que<br />aunque<br />por ende</p>
                                     </div>
                                 )}
 
-                                <div>
+                                <div className="space-y-4">
+                                    <div
+                                        onDrop={handleFileDrop}
+                                        onDragOver={handleDragOver}
+                                        onDragEnter={handleDragOver}
+                                        onDragLeave={handleDragOver}
+                                        className="w-full flex flex-col items-center justify-center h-32 px-4 py-3 bg-slate-900/50 border-2 border-dashed border-slate-600 hover:border-emerald-500 rounded-md transition-colors"
+                                    >
+                                        <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                                        <p className="text-slate-300 text-sm mb-2 text-center">
+                                            {file ? `Archivo seleccionado: ${file.name}` : "Arrastra y suelta tu archivo (.docx o .txt) aquí o"}
+                                        </p>
+                                        <label className="cursor-pointer bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-md text-sm transition-colors">
+                                            Incorporar ejercicios desde un archivo .docx o .txt
+                                            <input type="file" className="hidden" accept=".txt,.docx" onChange={handleFileChange} />
+                                        </label>
+                                    </div>
+                                    <div className="flex items-center text-slate-400 text-sm">
+                                        <span className="flex-1 border-t border-slate-700"></span>
+                                        <span className="px-3">O ingresa el texto manualmente</span>
+                                        <span className="flex-1 border-t border-slate-700"></span>
+                                    </div>
                                     <textarea
-                                        className="w-full h-64 px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-md text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none font-mono text-sm leading-relaxed"
-                                        placeholder="Enunciado...&#10;opcion 1&#10;opcion 2*&#10;opcion 3"
+                                        className="w-full h-32 px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-md text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none font-mono text-sm leading-relaxed"
+                                        placeholder="O copia y pega el texto aquí..."
                                         value={bulkText}
                                         onChange={(e) => setBulkText(e.target.value)}
                                     ></textarea>
@@ -550,13 +666,13 @@ export default function AdminPage() {
                                 </button>
                                 <button
                                     onClick={handleBulkImport}
-                                    disabled={isImporting || !bulkText.trim()}
-                                    className={`px-5 py-2.5 text-white rounded-lg transition-colors shadow-sm font-medium flex items-center ${isImporting || !bulkText.trim()
+                                    disabled={isImporting || (!bulkText.trim() && !file)}
+                                    className={`px-5 py-2.5 text-white rounded-lg transition-colors shadow-sm font-medium flex items-center ${isImporting || (!bulkText.trim() && !file)
                                         ? "bg-emerald-600/50 cursor-not-allowed text-emerald-200"
                                         : "bg-emerald-600 hover:bg-emerald-700 ring-1 ring-emerald-500/50"
                                         }`}
                                 >
-                                    {isImporting ? "Procesando..." : "Importar Ejercicios"}
+                                    {isImporting ? "Procesando..." : "Incorporar Ejercicios"}
                                 </button>
                             </div>
                         </div>
