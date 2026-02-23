@@ -289,17 +289,20 @@ export default function AdminPage() {
                         try {
                             // @ts-ignore
                             const mammoth = await import("mammoth/mammoth.browser");
-                            // Convertir a HTML primero para ver la separacion de parrafos
+                            // Convertir a HTML para deducir los saltos de línea con seguridad
                             const extract = await mammoth.convertToHtml({ arrayBuffer: result });
-                            // Mammoth uses <p> as paragraph separator
-                            console.log("MAMMOTH HTML:", extract.value);
 
-                            // Transformar los <p> a saltos de linea. 
-                            // Un <p></p> vacio = linea en blanco = separador de bloque
+                            // Reemplazamos los finales de parrafo por saltos de linea y limpiamos HTML.
+                            // Si en DOCX habia una linea vacia, en HTML podria quedar <p></p>
+                            // que pasara a ser \n. Dos parrafos seguidos vacios daran \n\n
                             let text = extract.value
                                 .replace(/<\/p>/gi, '\n')
-                                .replace(/<p[^>]*>/gi, '')
-                                .replace(/<br\s*\/?>/gi, '\n');
+                                .replace(/<br\s*\/?>/gi, '\n')
+                                .replace(/<[^>]+>/g, '') // Quitar todos los demas tags
+                                .replace(/&nbsp;/g, ' ')
+                                .replace(/&lt;/g, '<')
+                                .replace(/&gt;/g, '>')
+                                .replace(/&amp;/g, '&');
 
                             console.log("MAMMOTH TRANSFORMADO:", text);
                             resolve(text);
