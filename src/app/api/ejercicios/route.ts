@@ -10,7 +10,7 @@ export async function GET() {
         // Parse the JSON string options back to arrays
         const parsedEjercicios = ejercicios.map(e => ({
             ...e,
-            opciones: JSON.parse(e.opciones)
+            opciones: JSON.parse(String(e.opciones))
         }));
 
         return NextResponse.json(parsedEjercicios);

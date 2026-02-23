@@ -8,7 +8,9 @@ export async function GET() {
 
         const confObj: Record<string, string> = {};
         for (const item of configParams) {
-            confObj[item.clave] = item.valor;
+            const clave = typeof item.clave === 'string' ? item.clave : String(item.clave);
+            const valor = typeof item.valor === 'string' ? item.valor : String(item.valor);
+            confObj[clave] = valor;
         }
 
         return NextResponse.json(confObj);

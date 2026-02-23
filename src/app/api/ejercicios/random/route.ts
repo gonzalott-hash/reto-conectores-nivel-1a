@@ -8,7 +8,7 @@ export async function GET(request: Request) {
 
         // Obtener limite dinámico
         const paramRow = await db.get("SELECT valor FROM configuracion WHERE clave = 'num_ejercicios'");
-        const dbLimit = paramRow ? parseInt(paramRow.valor, 10) : null;
+        const dbLimit = paramRow && paramRow.valor ? parseInt(String(paramRow.valor), 10) : null;
         const limitNum = dbLimit || parseInt(searchParams.get('limit') || '10', 10);
 
         // Sólo trae ejercicios activos y ordenados al azar
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     `, [limitNum]);
 
         const parsedEjercicios = ejercicios.map(e => {
-            const opcionesArr: string[] = JSON.parse(e.opciones);
+            const opcionesArr: string[] = JSON.parse(String(e.opciones));
             // Shuffle opciones
             for (let i = opcionesArr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
