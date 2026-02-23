@@ -297,10 +297,9 @@ export default function AdminPage() {
                             // Transformar los <p> a saltos de linea. 
                             // Un <p></p> vacio = linea en blanco = separador de bloque
                             let text = extract.value
-                                .replace(/<\/p><p>/g, '\n')
-                                .replace(/<p>/g, '')
-                                .replace(/<\/p>/g, '')
-                                .replace(/<br\s*\/?>/g, '\n');
+                                .replace(/<\/p>/gi, '\n')
+                                .replace(/<p[^>]*>/gi, '')
+                                .replace(/<br\s*\/?>/gi, '\n');
 
                             console.log("MAMMOTH TRANSFORMADO:", text);
                             resolve(text);
