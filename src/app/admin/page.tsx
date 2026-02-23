@@ -204,16 +204,32 @@ export default function AdminPage() {
         setIsImporting(true);
         try {
             // Normalizar el texto. Mammoth aveces genera multiples \n seguidos o usa etiquetas para los párrafos de docx
-            const normalizedText = textToProcess.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-            // Dividimos por bloques separados por 2 o más saltos de línea seguidos
-            const blocks = normalizedText.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+            const normalizedText = textToProcess.replace(/\r\n/g, '\n').trim();
+            const allLines = normalizedText.split('\n').map(l => l.trim()).filter(Boolean);
+
+            const blocks: string[][] = [];
+            let currentBlock: string[] = [];
+
+            for (const line of allLines) {
+                // Si la línea parece un enunciado (tiene al menos dos guiones bajos)
+                if (line.includes('__')) {
+                    if (currentBlock.length > 0) {
+                        blocks.push([...currentBlock]);
+                    }
+                    currentBlock = [line];
+                } else {
+                    if (currentBlock.length > 0) {
+                        currentBlock.push(line);
+                    }
+                }
+            }
+            if (currentBlock.length > 0) {
+                blocks.push(currentBlock);
+            }
 
             console.log("BLOQUES DETECTADOS:", blocks.length);
-            console.log("PRIMER BLOQUE:", blocks[0]);
 
-            const parsedEjercicios = blocks.map(block => {
-                const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-
+            const parsedEjercicios = blocks.map(lines => {
                 if (lines.length < 2) return null; // Needs at least one prompt and one option
 
                 const enunciado_incorrecto = lines[0];
@@ -237,16 +253,15 @@ export default function AdminPage() {
             }).filter(ej => ej !== null && ej.enunciado_incorrecto && ej.opcionesArray.length > 0 && ej.conector_correcto);
 
             if (parsedEjercicios.length === 0) {
-                alert("No se encontraron ejercicios válidos. Revisa el formato.");
+                alert("No se encontraron ejercicios válidos. Revisa el formato. Recuerda que los enunciados deben contener al menos dos guiones bajos (__) y la respuesta correcta terminar en asterisco (*).");
                 setIsImporting(false);
                 return;
             }
 
-            // Map it to what the API expects (the route we just created expects arr string in opciones but it's passed directly to stringify there, handled in the single item endpoint differently)
-            // our new bulk API expects 'opciones' to be a comma separated string since we did `ej.opciones.split(",")` inside the bulk route.
+            // Map it to what the API expects
             const payloadArray = parsedEjercicios.map(ej => ({
                 enunciado_incorrecto: ej!.enunciado_incorrecto,
-                opciones: ej!.opcionesArray.join(","),
+                opciones: ej!.opcionesArray,
                 conector_correcto: ej!.conector_correcto,
                 explicacion: ej!.explicacion
             }));

@@ -22,9 +22,13 @@ export async function POST(req: NextRequest) {
         try {
             for (const ej of body.ejercicios) {
                 if (ej.enunciado_incorrecto && ej.opciones && ej.conector_correcto) {
+                    const opcionesArray = Array.isArray(ej.opciones)
+                        ? ej.opciones
+                        : ej.opciones.split(",").map((o: string) => o.trim());
+
                     await stmt.run(
                         ej.enunciado_incorrecto,
-                        JSON.stringify(ej.opciones.split(",").map((o: string) => o.trim())),
+                        JSON.stringify(opcionesArray),
                         ej.conector_correcto.trim(),
                         ej.explicacion || ""
                     );
