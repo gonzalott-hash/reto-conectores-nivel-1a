@@ -47,3 +47,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Failed to create ejercicio' }, { status: 500 });
     }
 }
+
+export async function DELETE() {
+    try {
+        const db = await getDb();
+        await db.run('DELETE FROM ejercicios');
+        return NextResponse.json({ message: 'Todos los ejercicios han sido eliminados' });
+    } catch (error) {
+        console.error("Error deleting all ejercicios:", error);
+        return NextResponse.json({ error: 'Failed to delete all ejercicios' }, { status: 500 });
+    }
+}

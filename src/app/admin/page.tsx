@@ -22,6 +22,7 @@ export default function AdminPage() {
     // Form states
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+    const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
     const [showInstructions, setShowInstructions] = useState(false);
     const [showTable, setShowTable] = useState(false);
     const [bulkText, setBulkText] = useState("");
@@ -184,6 +185,26 @@ export default function AdminPage() {
             } catch (error) {
                 console.error(error);
             }
+        }
+    };
+
+    const handleDeleteAll = async () => {
+        console.log("Delete all requested via modal");
+        setIsDeleteAllModalOpen(false);
+        try {
+            const res = await fetch("/api/ejercicios", {
+                method: "DELETE"
+            });
+
+            if (res.ok) {
+                alert("Banco de datos vaciado correctamente.");
+                fetchEjercicios();
+            } else {
+                alert("Error al intentar vaciar el banco de datos.");
+            }
+        } catch (error) {
+            console.error("Error in handleDeleteAll:", error);
+            alert("Error de conexión al intentar eliminar todo.");
         }
     };
 
@@ -467,13 +488,20 @@ export default function AdminPage() {
                     </div>
                 </div>
 
-                <div className="p-4 border-b border-slate-700/50 flex bg-slate-800">
+                <div className="p-4 border-b border-slate-700/50 flex flex-wrap gap-3 bg-slate-800">
                     <button
                         onClick={handleDownloadDb}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm ring-1 ring-blue-500/50 text-sm font-medium"
                     >
                         <Download className="w-4 h-4 mr-2" />
                         Descargar Banco
+                    </button>
+                    <button
+                        onClick={() => setIsDeleteAllModalOpen(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm ring-1 ring-red-500/50 text-sm font-medium cursor-pointer"
+                    >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar todo el Banco
                     </button>
                 </div>
 
@@ -691,6 +719,42 @@ export default function AdminPage() {
                                 >
                                     {isImporting ? "Procesando..." : "Incorporar Ejercicios"}
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Delete All Confirmation Modal */}
+            {
+                isDeleteAllModalOpen && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[100] backdrop-blur-md">
+                        <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md border border-red-500/30 overflow-hidden">
+                            <div className="p-6 text-center">
+                                <div className="w-16 h-16 bg-red-900/30 border border-red-500/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Trash2 className="w-8 h-8 text-red-500" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-100 mb-2">
+                                    ¿Eliminar todo el banco?
+                                </h3>
+                                <p className="text-slate-400 text-sm mb-6">
+                                    Esta acción eliminará <strong>TODOS</strong> los ejercicios de forma permanente. <br />
+                                    No podrás deshacer este cambio.
+                                </p>
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={handleDeleteAll}
+                                        className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors shadow-lg shadow-red-900/20"
+                                    >
+                                        Sí, eliminar todo definitivamente
+                                    </button>
+                                    <button
+                                        onClick={() => setIsDeleteAllModalOpen(false)}
+                                        className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-medium transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
