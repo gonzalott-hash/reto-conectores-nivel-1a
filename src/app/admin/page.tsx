@@ -660,7 +660,7 @@ export default function AdminPage() {
 
                                 {showInstructions && (
                                     <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-sm text-slate-300 space-y-2 whitespace-pre-wrap">
-                                        <p>« Los nuevos ejercicios deben mantener el estándar del nivel 1:</p>
+                                        <p>&laquo; Los nuevos ejercicios deben mantener el estándar del nivel 1:</p>
                                         <p>- Enunciados entre 20 y 30 palabras con un solo conector reemplazado por una línea baja en blanco.</p>
                                         <p>- Los nuevos ejercicios, entre 1 y 100, deben presentarse en un archivo de word o texto.</p>
                                         <p>Si el profesor quiere subir 20 nuevos ejercicios, estos deben presentarse en un archivo word o texto respetando rigurosamente el formato de los siguientes ejemplos:</p>

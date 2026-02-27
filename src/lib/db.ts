@@ -1,4 +1,4 @@
-import { createClient, Client } from "@libsql/client";
+import { createClient, Client, InValue } from "@libsql/client";
 
 const url = process.env.TURSO_DATABASE_URL || "file:./sqlite.db";
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -11,17 +11,17 @@ class DbWrapper {
         this.client = client;
     }
 
-    async all(sql: string, args: any[] = []) {
+    async all(sql: string, args: InValue[] = []) {
         const res = await this.client.execute({ sql, args });
         return res.rows;
     }
 
-    async get(sql: string, args: any[] = []) {
+    async get(sql: string, args: InValue[] = []) {
         const res = await this.client.execute({ sql, args });
         return res.rows[0];
     }
 
-    async run(sql: string, args: any[] = []) {
+    async run(sql: string, args: InValue[] = []) {
         const res = await this.client.execute({ sql, args });
         return { lastID: res.lastInsertRowid?.toString() || 0, changes: res.rowsAffected };
     }
@@ -29,7 +29,7 @@ class DbWrapper {
     async prepare(sql: string) {
         // Just return a dummy statement that calls run
         return {
-            run: async (...args: any[]) => {
+            run: async (...args: InValue[]) => {
                 return await this.run(sql, args);
             },
             finalize: async () => { }
